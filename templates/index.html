@@ -35,7 +35,7 @@
             box-sizing: border-box;
         }
 
-        button, input[type="submit"] {
+        button {
             display: block;
             width: 100%;
             padding: 10px;
@@ -48,7 +48,7 @@
             cursor: pointer;
         }
 
-        button:hover, input[type="submit"]:hover {
+        button:hover {
             background-color: #0056b3;
         }
 
@@ -59,7 +59,7 @@
         }
 
         .bottom-section table {
-            width: 45%;
+            width: 100%;
             border-collapse: collapse;
             margin: 0 auto;
         }
@@ -73,139 +73,134 @@
         th {
             background-color: #f2f2f2;
         }
+
+        .table-wrapper {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .error-message {
+            color: red;
+            margin-top: 10px;
+        }
+
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Analizador Léxico</h1>
+        <h1>Analizador Léxico y Sintáctico</h1>
         
+        <!-- Mostrar mensaje de error si es necesario -->
+        <div id="errorMessage" class="error-message"></div>
+
         <!-- Formulario de análisis léxico -->
         <form id="lexicalForm">
-            <textarea id="inputText" placeholder="Inserta un token aquí"></textarea>
+            <textarea id="inputText" placeholder="Inserta el código aquí"></textarea>
             <button type="button" onclick="analyzeCode()">Analizar</button>
         </form>
-        <h2>Análisador Léxico</h2>
-        <!-- Sección inferior con tablas -->
+        
+        <h2>Resultado del Análisis Léxico</h2>
         <div class="bottom-section">
-            <!-- Primera tabla: Tokens 'for' encontrados -->
-            <div>
-                <h2>Tokens 'for' Encontrados</h2>
-                <table id="forTable">
+            <div class="table-wrapper">
+                <table id="tokenTable">
                     <tr>
+                        <th>Línea</th>
+                        <th>Tipo de Token</th>
                         <th>Token</th>
                     </tr>
                 </table>
             </div>
-
-            <!-- Segunda tabla: Caracteres y Símbolos de 'for' -->
-            <div>
-                <h2>Caracteres y Símbolos de 'for'</h2>
-                <table id="symbolTable">
-                    <tr>
-                        <th>Caracteres</th>
-                        <th>Símbolos</th>
-                    </tr>
-                </table>
-            </div>
-        </div>
-
-        <!-- Nueva tabla agregada para análisis sintáctico -->
-        <div style="margin-top: 20px;">
-            <h2>Análizador Sintáctico</h2>
-            <table id="syntaxTable">
-                <tr>
-                    <th>Línea</th>
-                    <th>Tipo de Estructura</th>
-                    <th>Estructura Correcta</th>
-                    <th>Estructura Incorrecta</th>
-                </tr>
-            </table>
         </div>
     </div>
 
     <script>
         function analyzeCode() {
-            // Obtener el texto ingresado
+            // Diccionarios para clasificar tokens
+            const reservedWords = {
+                'int': 'Palabra reservada', 
+                'main': 'Reservada main'
+            };
+            const symbols = {
+                '(': 'Parentesis de apertura', 
+                ')': 'Parentesis de cierre', 
+                '{': 'Llave de apertura', 
+                '}': 'Llave de cierre', 
+                ';': 'Punto y coma'
+            };
+
+            // Lista de tokens esperados (en orden) para la validación sintáctica
+            const expectedTokens = [
+                ['int', 'Palabra reservada'], 
+                ['main', 'Reservada main'], 
+                ['(', 'Parentesis de apertura'], 
+                [')', 'Parentesis de cierre'], 
+                ['{', 'Llave de apertura'], 
+                ['int', 'Palabra reservada'], 
+                ['x', 'Identificador'], 
+                [';', 'Punto y coma'], 
+                ['}', 'Llave de cierre']
+            ];
+
+            // Obtener el texto ingresado y dividirlo por líneas
             const inputText = document.getElementById("inputText").value;
+            const lines = inputText.split(/\n/);  // Dividir el texto en líneas
 
-            // Separar las palabras del texto, preservando espacios para "hola mundo"
-            const tokens = inputText.split(/\s+/);
+            // Limpiar la tabla y mensajes anteriores
+            document.getElementById("tokenTable").innerHTML = "<tr><th>Línea</th><th>Tipo de Token</th><th>Token</th></tr>";
+            document.getElementById("errorMessage").innerHTML = '';  // Limpiar mensajes de error
 
-            // Limpiar las tablas anteriores
-            document.getElementById("forTable").innerHTML = "<tr><th>Token</th></tr>";
-            document.getElementById("symbolTable").innerHTML = "<tr><th>Caracteres</th><th>Símbolos</th></tr>";
-            document.getElementById("syntaxTable").innerHTML = "<tr><th>Línea</th><th>Tipo de Estructura</th><th>Estructura Correcta</th><th>Estructura Incorrecta</th></tr>";
+            let tokenIndex = 0;  // Para comparar con la lista de tokens esperados
+            let errorMessage = '';  // Almacena los mensajes de error
+            let errorFound = false;  // Bandera para detectar errores
 
-            // Variables para almacenar las instancias de 'for' o 'fora'
-            const foundTokens = [];
-            let lineNumber = 1;
+            // Procesar cada línea
+            lines.forEach((line, lineNumber) => {
+                const tokens = line.split(/\s+/);  // Dividir cada línea en tokens
 
-            // Recorrer los tokens y procesar
-            tokens.forEach(function(token) {
-                // Analizar el token 'for'
-                if (token === 'for') {
-                    // Agregar el token 'for' a la tabla de tokens encontrados
-                    const row = document.createElement("tr");
-                    const cell = document.createElement("td");
-                    cell.textContent = token;
-                    row.appendChild(cell);
-                    document.getElementById("forTable").appendChild(row);
+                // Procesar cada token en la línea
+                tokens.forEach(function(token) {
+                    let tokenType = 'Desconocido';
 
-                    // Agregar a la tabla de caracteres y símbolos
-                    const symbolRow = document.createElement("tr");
-                    const charCell = document.createElement("td");
-                    const symbolCell = document.createElement("td");
-                    charCell.textContent = 'Reservada'; // Indicar que es una palabra reservada
-                    symbolCell.textContent = token; // Mostrar el token 'for'
-                    symbolRow.appendChild(charCell);
-                    symbolRow.appendChild(symbolCell);
-                    document.getElementById("symbolTable").appendChild(symbolRow);
+                    // Clasificar el token
+                    if (reservedWords[token]) {
+                        tokenType = reservedWords[token];
+                    } else if (symbols[token]) {
+                        tokenType = symbols[token];
+                    } else if (token === 'x') {
+                        tokenType = 'Identificador';
+                    }
 
-                    // Agregar a la tabla de análisis sintáctico
-                    const syntaxRow = document.createElement("tr");
-                    syntaxRow.innerHTML = `<td>${lineNumber}</td><td>For</td><td>X</td><td></td>`;
-                    document.getElementById("syntaxTable").appendChild(syntaxRow);
+                    // Verificar si el token coincide con el esperado
+                    if (tokenIndex < expectedTokens.length) {
+                        const [expectedToken, expectedType] = expectedTokens[tokenIndex];
+                        if (token !== expectedToken) {
+                            errorMessage += `Error: Se esperaba '${expectedToken}' en la línea ${lineNumber + 1}.<br>`;
+                            errorFound = true;
+                        }
+                        tokenIndex++;
+                    }
 
-                    foundTokens.push(token);
-                } 
-                // Analizar el token 'fora'
-                else if (token === 'fora') {
-                    const syntaxRow = document.createElement("tr");
-                    syntaxRow.innerHTML = `<td>${lineNumber}</td><td>Fora</td><td></td><td>X</td>`;
-                    document.getElementById("syntaxTable").appendChild(syntaxRow);
-                }
-                // Analizar los tokens 'hola', 'mundo', y 'hola mundo'
-                else if (token === 'hola' || token === 'mundo' || token === 'hola mundo') {
-                    // Agregar a la tabla de caracteres y símbolos
-                    const symbolRow = document.createElement("tr");
-                    const charCell = document.createElement("td");
-                    const symbolCell = document.createElement("td");
-                    charCell.textContent = 'Identificador'; // Indicar que es un identificador
-                    symbolCell.textContent = token;
-                    symbolRow.appendChild(charCell);
-                    symbolRow.appendChild(symbolCell);
-                    document.getElementById("symbolTable").appendChild(symbolRow);
-
-                    // Agregar a la tabla de análisis sintáctico como estructura correcta
-                    const syntaxRow = document.createElement("tr");
-                    syntaxRow.innerHTML = `<td>${lineNumber}</td><td>${token}</td><td>X</td><td></td>`;
-                    document.getElementById("syntaxTable").appendChild(syntaxRow);
-                }
-                lineNumber++;
+                    // Agregar el token a la tabla solo si no hay errores
+                    if (!errorFound) {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `<td>${lineNumber + 1}</td><td>${tokenType}</td><td>${token}</td>`;
+                        document.getElementById("tokenTable").appendChild(row);
+                    }
+                });
             });
 
-            // Si no se encuentran tokens 'for'
-            if (foundTokens.length === 0) {
-                const row = document.createElement("tr");
-                const cell = document.createElement("td");
-                cell.colSpan = 1; // Colspan para que ocupe toda la tabla
-                cell.textContent = "No se encontraron tokens 'for'.";
-                row.appendChild(cell);
-                document.getElementById("forTable").appendChild(row);
+            // Verificar si el código está incompleto
+            if (tokenIndex < expectedTokens.length && !errorFound) {
+                const [expectedToken, ] = expectedTokens[tokenIndex];
+                errorMessage += `Error: Se esperaba '${expectedToken}' pero no se encontró en el código.<br>`;
+                errorFound = true;
             }
 
-            // Limpiar el área de texto
-            document.getElementById("inputText").value = '';
+            // Mostrar mensaje de error si hay errores y no generar la tabla
+            if (errorFound) {
+                document.getElementById("errorMessage").innerHTML = errorMessage;
+                document.getElementById("tokenTable").innerHTML = ''; // Limpiar la tabla si hay errores
+            }
         }
     </script>
 </body>
